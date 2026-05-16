@@ -47,8 +47,10 @@ export default function Home() {
   const [activeTag, setActiveTag] = useState(null);
   const [creating, setCreating] = useState(false);
 
+  // --- Fetch notes on mount ---
   useEffect(() => {
     let cancelled = false;
+    sessionStorage.removeItem("notes:refresh");
     api
       .get("/users/notes")
       .then(({ data }) => !cancelled && setNotes(data.data.notes || []))
@@ -64,6 +66,7 @@ export default function Home() {
     };
   }, []);
 
+  // --- Derived data ---
   const allTags = useMemo(() => {
     const set = new Set();
     notes.forEach((n) => n.tags?.forEach((t) => set.add(t)));
@@ -78,6 +81,7 @@ export default function Home() {
     ? Math.max(...notes.map((n) => +new Date(n.updatedAt || n.createdAt || 0)))
     : null;
 
+  // --- Handlers ---
   const handleCreate = async () => {
     if (creating) return;
     setCreating(true);
@@ -113,9 +117,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative">
+      {/* --- Background glow --- */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute top-[400px] right-0 w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
 
+      {/* --- Header --- */}
       <header className="border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -139,6 +145,7 @@ export default function Home() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-10 relative">
+        {/* --- Hero --- */}
         <section className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.08] via-amber-500/[0.02] to-zinc-900/40 p-7 sm:p-9 backdrop-blur-sm">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
           <div className="relative">
@@ -205,6 +212,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* --- Notes section header --- */}
         <div className="mt-12 mb-6">
           <h2 className="text-2xl font-semibold tracking-tight font-serif">
             {activeTag ? (
@@ -229,6 +237,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* --- Tag filter --- */}
         {!loading && allTags.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
             <button
@@ -261,9 +270,11 @@ export default function Home() {
           </div>
         )}
 
+        {/* --- Notes grid --- */}
         <div className="mt-6">
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Loading skeleton */}
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
@@ -273,6 +284,7 @@ export default function Home() {
             </div>
           ) : notes.length === 0 ? (
             <div className="border border-dashed border-zinc-800 rounded-2xl p-16 text-center bg-zinc-900/30">
+              {/* Empty state — no notes yet */}
               <div className="inline-flex bg-amber-500/10 text-amber-400 p-4 rounded-2xl border border-amber-500/20 mb-5">
                 <Sparkles size={28} />
               </div>
@@ -293,6 +305,7 @@ export default function Home() {
             </div>
           ) : filteredNotes.length === 0 ? (
             <div className="border border-dashed border-zinc-800 rounded-2xl p-10 text-center bg-zinc-900/30">
+              {/* Empty state — no notes for active tag */}
               <p className="text-zinc-400">
                 No notes match{" "}
                 <span className="text-amber-400">#{activeTag}</span> yet.
@@ -306,8 +319,9 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Notes cards */}
               {filteredNotes.map((note) => {
-                const preview = (note.content || "").trim();
+                const preview = (note.summary || note.content || "").trim();
                 const isEmpty = preview.length === 0;
                 const previewText = isEmpty
                   ? "Empty note — click to start writing"
@@ -371,6 +385,7 @@ export default function Home() {
         </div>
       </main>
 
+      {/* --- Mobile FAB (create note) --- */}
       <button
         onClick={handleCreate}
         disabled={creating}

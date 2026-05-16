@@ -3,10 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Note } from "../models/note.model.js";
-import {
-    generateTitleFromContent,
-    generateSummaryFromContent,
-} from "../services/gemini.service.js";
+import {generateTitleFromContent, generateSummaryFromContent} from "../services/gemini.service.js";
 
 const generateTitle = asyncHandler(async (req, res) => {
     const { noteId } = req.params;
@@ -15,10 +12,7 @@ const generateTitle = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(noteId)) {
         throw new ApiError(400, "Invalid note id");
     }
-    if (content === undefined || content === null) {
-        throw new ApiError(400, "Content is required");
-    }
-    if (!String(content).trim()) {
+    if (!String(content || "").trim()) {
         throw new ApiError(400, "Content cannot be empty");
     }
 
@@ -27,16 +21,32 @@ const generateTitle = asyncHandler(async (req, res) => {
         throw new ApiError(403, "You don't have access to this note");
     }
 
-    const title = await generateTitleFromContent(String(content));
+    const note = await Note.findById(noteId);
+    if (!note) {
+        throw new ApiError(404, "Note not found");
+    }
+
+    // Only auto-generate when the title hasn't been set by the user.
+    if (note.titleGenerator === "human") {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, { title: "", note }, "Title is user-set"));
+    }
+
+    const generated = await generateTitleFromContent(String(content));
+    const title = generated?.trim();
+
+    if (!title || title.toLowerCase() === "untitled") {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, { title: "", note }, "No title generated"));
+    }
 
     const updatedNote = await Note.findByIdAndUpdate(
         noteId,
-        { $set: { title } },
+        { $set: { title, titleGenerator: "ai" } },
         { new: true }
     );
-    if (!updatedNote) {
-        throw new ApiError(404, "Note not found");
-    }
 
     return res
         .status(200)
@@ -50,10 +60,7 @@ const generateSummary = asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(noteId)) {
         throw new ApiError(400, "Invalid note id");
     }
-    if (content === undefined || content === null) {
-        throw new ApiError(400, "Content is required");
-    }
-    if (!String(content).trim()) {
+    if (!String(content || "").trim()) {
         throw new ApiError(400, "Content cannot be empty");
     }
 

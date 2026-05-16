@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Check, Loader2, NotebookPen, Pencil, X } from "lucide-react";
+import {ArrowLeft, Check, Loader2, NotebookPen, Pencil, Sparkles, X} from "lucide-react";
 import api from "../api";
 
 const TAG_PALETTE = [
@@ -26,6 +26,7 @@ export default function NoteEditor() {
 
   const [note, setNote] = useState(null);
   const [content, setContent] = useState("");
+  const [titleGenerator, setTitleGenerator] = useState("none");
   const [status, setStatus] = useState("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,6 +36,10 @@ export default function NoteEditor() {
   const [editTags, setEditTags] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
+
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+  const [backLoading, setBackLoading] = useState(false);
 
   const initialLoad = useRef(true);
   const debounceRef = useRef(null);
@@ -52,6 +57,7 @@ export default function NoteEditor() {
           } else {
             setNote(found);
             setContent(found.content || "");
+            setTitleGenerator(found.titleGenerator || "none");
           }
         }
       } catch (err) {
@@ -65,6 +71,15 @@ export default function NoteEditor() {
       cancelled = true;
     };
   }, [id]);
+
+  const flushContentSave = async () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    await api.patch(`/notes/${id}/content`, { content });
+    setStatus("saved");
+  };
 
   useEffect(() => {
     if (initialLoad.current) {
@@ -93,7 +108,7 @@ export default function NoteEditor() {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.max(el.scrollHeight, window.innerHeight - 280) + "px";
+    el.style.height = Math.max(el.scrollHeight, 320) + "px";
   }, [content, note]);
 
   const openEdit = () => {
@@ -118,16 +133,71 @@ export default function NoteEditor() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
-      const { data } = await api.patch(`/notes/${id}`, {
-        title: editTitle.trim(),
-        tags,
-      });
+      const trimmedTitle = editTitle.trim();
+      const titleChanged = trimmedTitle !== note.title;
+
+      const payload = { tags };
+      if (titleChanged) {
+        payload.title = trimmedTitle;
+        payload.titleGenerator = "human";
+      }
+
+      const { data } = await api.patch(`/notes/${id}`, payload);
       setNote(data.data.note);
+      if (titleChanged) setTitleGenerator("human");
       setShowEdit(false);
     } catch (err) {
       setEditError(err?.response?.data?.message || "Could not save changes");
     } finally {
       setEditSaving(false);
+    }
+  };
+
+  const handleGenerateSummary = async () => {
+    if (!content.trim()) {
+      setSummaryError("Write some content before generating a summary.");
+      return;
+    }
+    setSummaryLoading(true);
+    setSummaryError("");
+    try {
+      if (status === "saving") await flushContentSave();
+      const { data } = await api.post(`/notes/${id}/ai/summary`, { content });
+      setNote(data.data.note);
+    } catch (err) {
+      setSummaryError(
+        err?.response?.data?.message || "Could not generate summary"
+      );
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleBack = async () => {
+    if (titleGenerator === "human" || !content.trim()) {
+      navigate("/");
+      return;
+    }
+
+    setBackLoading(true);
+    try {
+      if (status === "saving") await flushContentSave();
+      const { data } = await api.post(`/notes/${id}/ai/title`, {
+        content,
+        titleGenerator,
+      });
+      const { title, note: updatedNote } = data.data || {};
+
+      if (title && updatedNote) {
+        setNote(updatedNote);
+        setTitleGenerator("ai");
+        sessionStorage.setItem("notes:refresh", "1");
+      }
+    } catch {
+      // Title generation is best-effort; swallow errors and just navigate back.
+    } finally {
+      setBackLoading(false);
+      navigate("/");
     }
   };
 
@@ -158,11 +228,18 @@ export default function NoteEditor() {
       <header className="border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-zinc-400 hover:text-zinc-100 transition px-2 py-1 rounded-lg hover:bg-zinc-900"
+            onClick={handleBack}
+            disabled={backLoading}
+            className="flex items-center gap-2 text-zinc-400 hover:text-zinc-100 transition px-2 py-1 rounded-lg hover:bg-zinc-900 disabled:opacity-50"
           >
-            <ArrowLeft size={18} />
-            <span className="text-sm font-medium">Notes</span>
+            {backLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <ArrowLeft size={18} />
+            )}
+            <span className="text-sm font-medium">
+              {backLoading ? "Saving title…" : "Notes"}
+            </span>
           </button>
           <Link to="/" className="flex items-center gap-2 group" title="Home">
             <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-md border border-amber-500/20">
@@ -218,10 +295,53 @@ export default function NoteEditor() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing..."
-            className="w-full bg-transparent resize-none outline-none text-lg leading-relaxed font-serif text-zinc-200 placeholder:text-zinc-700 placeholder:italic"
-            style={{ minHeight: "calc(100vh - 280px)" }}
+            className="w-full resize-none outline-none text-lg leading-relaxed font-serif text-zinc-100 placeholder:text-zinc-600 placeholder:italic rounded-2xl border border-zinc-700/80 bg-zinc-900/90 px-5 py-5 shadow-inner shadow-black/20 ring-1 ring-zinc-800/50 focus:border-amber-500/40 focus:ring-amber-500/20 transition"
+            style={{ minHeight: "320px" }}
           />
         </div>
+
+        <section className="mt-10">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">
+              Summary
+            </h2>
+            <button
+              onClick={handleGenerateSummary}
+              disabled={summaryLoading || !content.trim()}
+              className="inline-flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-lg bg-amber-400/10 text-amber-400 border border-amber-500/30 hover:bg-amber-400/20 disabled:opacity-50 disabled:hover:bg-amber-400/10 transition"
+            >
+              {summaryLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              {summaryLoading ? "Generating…" : "Create summary"}
+            </button>
+          </div>
+
+          {summaryError && (
+            <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2.5 mb-4">
+              {summaryError}
+            </p>
+          )}
+
+          <div
+            className={`rounded-2xl border px-5 py-5 ${
+              note.summary?.trim()
+                ? "bg-zinc-800/60 border-zinc-700/80 text-zinc-200"
+                : "bg-zinc-900/50 border-dashed border-zinc-800 text-zinc-600 italic"
+            }`}
+          >
+            {note.summary?.trim() ? (
+              <p className="text-base leading-relaxed font-serif">{note.summary}</p>
+            ) : (
+              <p className="text-sm">
+                No summary yet. Click &ldquo;Create summary&rdquo; to generate one from your
+                note.
+              </p>
+            )}
+          </div>
+        </section>
       </article>
 
       {showEdit && (

@@ -6,12 +6,10 @@ import { Note } from "../models/note.model.js";
 import { User } from "../models/user.model.js";
 
 const createNote = asyncHandler(async (req, res) => {
-    const { tags } = req.body
-
     const note = await Note.create({
         title: "Untitled",
-        tags: tags || [],
         content: "",
+        titleGenerator: "ai",
     })
     if(!note){
         throw new ApiError(500, "Error while creating note")
@@ -57,15 +55,17 @@ const updateContent = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { note: updatedNote }, "Content updated successfully"))
 })
 
+const VALID_TITLE_GENERATORS = ["human", "ai", "none"]
+
 const updateTitleOrTag = asyncHandler(async (req, res) => {
     const { noteId } = req.params
-    const { title, tags } = req.body
+    const { title, tags, titleGenerator } = req.body
 
     if(!mongoose.isValidObjectId(noteId)){
         throw new ApiError(400, "Invalid note id")
     }
-    if(title === undefined && tags === undefined){
-        throw new ApiError(400, "Provide at least title or tags to update")
+    if(title === undefined && tags === undefined && titleGenerator === undefined){
+        throw new ApiError(400, "Provide at least title, tags, or titleGenerator to update")
     }
 
     const isOwner = req.user.notes.some((id) => id.equals(noteId))
@@ -80,6 +80,12 @@ const updateTitleOrTag = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Title cannot be empty")
         }
         updates.title = trimmed
+    }
+    if(titleGenerator !== undefined){
+        if(!VALID_TITLE_GENERATORS.includes(titleGenerator)){
+            throw new ApiError(400, "titleGenerator must be human, ai, or none")
+        }
+        updates.titleGenerator = titleGenerator
     }
     if(tags !== undefined){
         if(!Array.isArray(tags)){

@@ -1,17 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  NotebookPen,
-  Sparkles,
-  Tags,
-  Feather,
-  ArrowRight,
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import {NotebookPen, Sparkles, Tags, Feather, ArrowRight, Mail, Lock, User, Eye, EyeOff} from "lucide-react";
 import { useAuth } from "../AuthContext.jsx";
 
 export default function Auth() {
@@ -125,7 +114,7 @@ export default function Auth() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className={inputCls}
-                    placeholder="Jane Doe"
+                    placeholder="Your name"
                   />
                 </Field>
               )}
@@ -136,7 +125,7 @@ export default function Auth() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={inputCls}
-                  placeholder="you@example.com"
+                  placeholder="your@email.com"
                 />
               </Field>
               <Field label="Password" icon={<Lock size={15} />}>

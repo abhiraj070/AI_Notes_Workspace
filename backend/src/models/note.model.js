@@ -14,6 +14,11 @@ const noteSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    titleGenerator:{
+      type: String,
+      enum: ["human", "ai", "none"],
+      default: "none",
+    },
     content: {
       type: String,
       default: "",

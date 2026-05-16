@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 
 import userRouter from "./routes/user.routes.js";
 import noteRouter from "./routes/note.routes.js";
+import aiRouter from "./routes/ai.routes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/notes", noteRouter);
+app.use("/api/v1/notes", aiRouter);
 
 app.use(errorHandler);
 
