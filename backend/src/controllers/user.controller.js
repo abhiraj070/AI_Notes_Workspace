@@ -5,22 +5,17 @@ import { User } from "../models/user.model.js";
 
 
 const register= asyncHandler(async (req,res) => {
-    const {fullName, username, email, password}= req.body
-    if(!fullName || !username || !email || !password){
+    const {name, email, password}= req.body
+    if(!name || !email || !password){
         throw new ApiError(400, "All fields are required")
     }
     const isUserNew= await User.findOne({email})
     if(isUserNew){
         throw new ApiError(400, "User already exists")
     }
-    const isUsernameTaken = await User.findOne({ username: username.trim().toLowerCase() })
-    if(isUsernameTaken){
-        throw new ApiError(400, "Username is already taken")
-    }
-    
+
     const user= await User.create({
-        fullName,
-        username,
+        name,
         email,
         password,
     })
@@ -29,8 +24,8 @@ const register= asyncHandler(async (req,res) => {
     }
     const registeredUser= await User.findById(user._id).select("-refreshToken -password")
     return res
-    .status(200)
-    .json(new ApiResponse(200,{user:registeredUser},"User Registered successfully"))
+    .status(201)
+    .json(new ApiResponse(201,{user:registeredUser},"User Registered successfully"))
 
 })
 
@@ -73,3 +68,19 @@ const login= asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200,{user: loggedUser, accessToken},"User logged in successfully"))
 })
+
+const getAllNotes= asyncHandler(async (req, res) => {
+    const user= await User.findById(req.user._id)
+        .select("-password -refreshToken")
+        .populate("notes")
+
+    if(!user){
+        throw new ApiError(404, "User not found")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, { notes: user.notes }, "Notes fetched successfully"))
+})
+
+export { register, login, getAllNotes }
