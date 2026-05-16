@@ -4,14 +4,14 @@ import { ArrowLeft, Check, Loader2, NotebookPen } from "lucide-react";
 import api from "../api";
 
 const TAG_PALETTE = [
-  { bg: "bg-emerald-500/15", text: "text-emerald-300", ring: "ring-emerald-500/20" },
   { bg: "bg-amber-500/15", text: "text-amber-300", ring: "ring-amber-500/20" },
   { bg: "bg-sky-500/15", text: "text-sky-300", ring: "ring-sky-500/20" },
   { bg: "bg-rose-500/15", text: "text-rose-300", ring: "ring-rose-500/20" },
-  { bg: "bg-teal-500/15", text: "text-teal-300", ring: "ring-teal-500/20" },
   { bg: "bg-orange-500/15", text: "text-orange-300", ring: "ring-orange-500/20" },
-  { bg: "bg-lime-500/15", text: "text-lime-300", ring: "ring-lime-500/20" },
   { bg: "bg-fuchsia-500/15", text: "text-fuchsia-300", ring: "ring-fuchsia-500/20" },
+  { bg: "bg-cyan-500/15", text: "text-cyan-300", ring: "ring-cyan-500/20" },
+  { bg: "bg-blue-500/15", text: "text-blue-300", ring: "ring-blue-500/20" },
+  { bg: "bg-yellow-500/15", text: "text-yellow-300", ring: "ring-yellow-500/20" },
 ];
 
 function tagColor(tag) {
@@ -104,7 +104,7 @@ export default function NoteEditor() {
         <p className="text-zinc-300">{error || "Note not found"}</p>
         <Link
           to="/"
-          className="text-emerald-400 font-medium hover:text-emerald-300 text-sm"
+          className="text-amber-400 font-medium hover:text-amber-300 text-sm"
         >
           Back to notes
         </Link>
@@ -123,17 +123,13 @@ export default function NoteEditor() {
             <ArrowLeft size={18} />
             <span className="text-sm font-medium">Notes</span>
           </button>
-          <Link
-            to="/"
-            className="flex items-center gap-2 group"
-            title="Home"
-          >
-            <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-md border border-emerald-500/20">
+          <Link to="/" className="flex items-center gap-2 group" title="Home">
+            <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-md border border-amber-500/20">
               <NotebookPen size={14} />
             </div>
             <div className="text-sm font-semibold tracking-tight">
               <span>note</span>
-              <span className="text-emerald-400">Ai</span>
+              <span className="text-amber-400">Ai</span>
             </div>
           </Link>
           <SaveIndicator status={status} />
@@ -185,7 +181,7 @@ function SaveIndicator({ status }) {
   }
   if (status === "saved") {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+      <span className="flex items-center gap-1.5 text-xs text-amber-400">
         <Check size={14} /> Saved
       </span>
     );

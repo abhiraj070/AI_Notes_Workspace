@@ -6,7 +6,7 @@
   --color-border: #27272a;
   --color-ink: #fafafa;
   --color-muted: #a1a1aa;
-  --color-accent: #34d399;
+  --color-accent: #fbbf24;
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-serif: "Lora", Georgia, serif;
@@ -26,12 +26,12 @@ body {
   background-image:
     radial-gradient(
       ellipse 80% 60% at 0% 0%,
-      rgba(52, 211, 153, 0.06),
+      rgba(251, 191, 36, 0.07),
       transparent 60%
     ),
     radial-gradient(
       ellipse 70% 50% at 100% 100%,
-      rgba(52, 211, 153, 0.04),
+      rgba(251, 191, 36, 0.05),
       transparent 60%
     );
   background-attachment: fixed;
@@ -52,13 +52,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Selection */
 ::selection {
-  background: rgba(52, 211, 153, 0.25);
+  background: rgba(251, 191, 36, 0.3);
   color: #fafafa;
 }
 
-/* Subtle scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -72,4 +70,19 @@ button:disabled {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
 }

@@ -1,24 +1,57 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Trash2, NotebookPen, LogOut, X, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  NotebookPen,
+  LogOut,
+  X,
+  Sparkles,
+  Quote,
+  FileText,
+  Tag,
+  Clock,
+} from "lucide-react";
 import api from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
 const TAG_PALETTE = [
-  { bg: "bg-emerald-500/15", text: "text-emerald-300", ring: "ring-emerald-500/20" },
   { bg: "bg-amber-500/15", text: "text-amber-300", ring: "ring-amber-500/20" },
   { bg: "bg-sky-500/15", text: "text-sky-300", ring: "ring-sky-500/20" },
   { bg: "bg-rose-500/15", text: "text-rose-300", ring: "ring-rose-500/20" },
-  { bg: "bg-teal-500/15", text: "text-teal-300", ring: "ring-teal-500/20" },
   { bg: "bg-orange-500/15", text: "text-orange-300", ring: "ring-orange-500/20" },
-  { bg: "bg-lime-500/15", text: "text-lime-300", ring: "ring-lime-500/20" },
   { bg: "bg-fuchsia-500/15", text: "text-fuchsia-300", ring: "ring-fuchsia-500/20" },
+  { bg: "bg-cyan-500/15", text: "text-cyan-300", ring: "ring-cyan-500/20" },
+  { bg: "bg-blue-500/15", text: "text-blue-300", ring: "ring-blue-500/20" },
+  { bg: "bg-yellow-500/15", text: "text-yellow-300", ring: "ring-yellow-500/20" },
 ];
 
 function tagColor(tag) {
   let h = 0;
   for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) | 0;
   return TAG_PALETTE[Math.abs(h) % TAG_PALETTE.length];
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5) return "Good night";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good night";
+}
+
+function formatRelative(dateStr) {
+  if (!dateStr) return "";
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }
 
 export default function Home() {
@@ -28,6 +61,7 @@ export default function Home() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [activeTag, setActiveTag] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +83,28 @@ export default function Home() {
     };
   }, []);
 
+  const allTags = useMemo(() => {
+    const set = new Set();
+    notes.forEach((n) => n.tags?.forEach((t) => set.add(t)));
+    return Array.from(set);
+  }, [notes]);
+
+  const filteredNotes = useMemo(
+    () =>
+      activeTag
+        ? notes.filter((n) => n.tags?.includes(activeTag))
+        : notes,
+    [notes, activeTag]
+  );
+
+  const lastEdited = useMemo(() => {
+    if (!notes.length) return null;
+    return notes.reduce((latest, n) => {
+      const t = new Date(n.updatedAt || n.createdAt || 0).getTime();
+      return t > latest ? t : latest;
+    }, 0);
+  }, [notes]);
+
   const handleCreated = (note) => {
     setNotes((n) => [note, ...n]);
     setShowCreate(false);
@@ -67,90 +123,125 @@ export default function Home() {
     }
   };
 
+  const handleSignOut = () => {
+    if (!confirm("Sign out of noteAi?")) return;
+    logout();
+    navigate("/auth", { replace: true });
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-0" />
+      <div className="absolute top-[400px] right-0 w-[400px] h-[400px] bg-amber-500/5 blur-[100px] rounded-full pointer-events-none -z-0" />
+
       <header className="border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg border border-emerald-500/20">
+            <div className="bg-amber-500/10 text-amber-400 p-2 rounded-lg border border-amber-500/20">
               <NotebookPen size={18} />
             </div>
             <div className="text-lg font-semibold tracking-tight">
               <span>note</span>
-              <span className="text-emerald-400">Ai</span>
+              <span className="text-amber-400">Ai</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-sm text-zinc-400">
-              Hi, <span className="text-zinc-200">{user?.name || "there"}</span>
-            </span>
-            <button
-              onClick={() => {
-                logout();
-                navigate("/auth", { replace: true });
-              }}
-              className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition px-3 py-1.5 rounded-lg hover:bg-zinc-900"
-              title="Sign out"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition px-3 py-1.5 rounded-lg hover:bg-zinc-900"
+            title="Sign out"
+          >
+            <LogOut size={16} />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-10 flex items-end justify-between gap-4">
+      <main className="max-w-6xl mx-auto px-6 py-10 relative">
+        <Hero
+          name={user?.name || "there"}
+          notesCount={notes.length}
+          tagsCount={allTags.length}
+          lastEditedAt={lastEdited}
+          onCreate={() => setShowCreate(true)}
+        />
+
+        <div className="mt-12 mb-6 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight font-serif">
-              Your notes
+            <h2 className="text-2xl font-semibold tracking-tight font-serif">
+              {activeTag ? (
+                <span>
+                  Notes tagged{" "}
+                  <span className="text-amber-400">#{activeTag}</span>
+                </span>
+              ) : (
+                "Your notes"
+              )}
             </h2>
-            <p className="text-zinc-500 text-sm mt-2">
+            <p className="text-zinc-500 text-sm mt-1.5">
               {loading
                 ? "Loading..."
-                : notes.length === 0
-                ? "Nothing here yet — tap the + button to start."
-                : `${notes.length} note${notes.length === 1 ? "" : "s"}`}
+                : filteredNotes.length === 0
+                ? activeTag
+                  ? "No notes with this tag yet."
+                  : "Nothing here yet — tap the + button to start."
+                : `${filteredNotes.length} note${
+                    filteredNotes.length === 1 ? "" : "s"
+                  }`}
             </p>
           </div>
-          {!loading && notes.length > 0 && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="hidden sm:inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 px-4 py-2 rounded-lg font-semibold transition"
-            >
-              <Plus size={18} /> New note
-            </button>
-          )}
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-40 rounded-2xl bg-zinc-900/60 border border-zinc-800 animate-pulse"
-              />
-            ))}
-          </div>
-        ) : notes.length === 0 ? (
-          <EmptyState onCreate={() => setShowCreate(true)} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {notes.map((note) => (
-              <NoteCard
-                key={note._id}
-                note={note}
-                onDelete={() => handleDelete(note._id)}
-              />
-            ))}
-          </div>
+        {!loading && allTags.length > 0 && (
+          <TagFilter
+            tags={allTags}
+            active={activeTag}
+            onChange={setActiveTag}
+          />
         )}
+
+        <div className="mt-6">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-40 rounded-2xl bg-zinc-900/60 border border-zinc-800 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : notes.length === 0 ? (
+            <EmptyState onCreate={() => setShowCreate(true)} />
+          ) : filteredNotes.length === 0 ? (
+            <div className="border border-dashed border-zinc-800 rounded-2xl p-10 text-center bg-zinc-900/30">
+              <p className="text-zinc-400">
+                No notes match{" "}
+                <span className="text-amber-400">#{activeTag}</span> yet.
+              </p>
+              <button
+                onClick={() => setActiveTag(null)}
+                className="mt-3 text-sm text-amber-400 hover:text-amber-300 font-medium"
+              >
+                Clear filter
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredNotes.map((note) => (
+                <NoteCard
+                  key={note._id}
+                  note={note}
+                  onDelete={() => handleDelete(note._id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       <button
         onClick={() => setShowCreate(true)}
-        className="sm:hidden fixed bottom-6 right-6 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 rounded-full w-14 h-14 shadow-xl shadow-emerald-500/25 flex items-center justify-center transition hover:scale-105"
+        className="sm:hidden fixed bottom-6 right-6 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 rounded-full w-14 h-14 shadow-xl shadow-amber-500/30 flex items-center justify-center transition hover:scale-105 z-20"
         title="New note"
         aria-label="Create new note"
       >
@@ -167,6 +258,101 @@ export default function Home() {
   );
 }
 
+function Hero({ name, quote, notesCount, tagsCount, lastEditedAt, onCreate }) {
+  return (
+    <section className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.08] via-amber-500/[0.02] to-zinc-900/40 p-7 sm:p-9 backdrop-blur-sm">
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
+
+      <div className="relative grid lg:grid-cols-[1.4fr_1fr] gap-8 items-start">
+        <div>
+          <div className="inline-flex items-center gap-2 text-amber-400 text-xs font-medium uppercase tracking-wider mb-3">
+            <Sparkles size={14} /> {greeting()}
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight font-serif">
+            Hello,{" "}
+            <span className="text-amber-400">{name.split(" ")[0]}</span>.
+          </h1>
+          <p className="text-zinc-400 mt-3 text-base leading-relaxed max-w-md">
+            Your private space for ideas, drafts, and everything in between.
+            What will you capture today?
+          </p>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Stat
+              icon={<FileText size={14} />}
+              label="Notes"
+              value={notesCount}
+            />
+            <Stat icon={<Tag size={14} />} label="Tags" value={tagsCount} />
+            {lastEditedAt && (
+              <Stat
+                icon={<Clock size={14} />}
+                label="Last edit"
+                value={formatRelative(lastEditedAt)}
+              />
+            )}
+          </div>
+
+          <button
+            onClick={onCreate}
+            className="mt-6 inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 px-5 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-amber-500/25"
+          >
+            <Plus size={18} /> Create a note
+          </button>
+        </div>
+
+        
+      </div>
+    </section>
+  );
+}
+
+function Stat({ icon, label, value }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/60 border border-zinc-800">
+      <span className="text-amber-400">{icon}</span>
+      <span className="text-xs text-zinc-500 uppercase tracking-wider">
+        {label}
+      </span>
+      <span className="text-sm font-semibold text-zinc-100">{value}</span>
+    </div>
+  );
+}
+
+function TagFilter({ tags, active, onChange }) {
+  return (
+    <div className="flex flex-wrap gap-2 items-center">
+      <button
+        onClick={() => onChange(null)}
+        className={`text-xs font-medium px-3 py-1.5 rounded-full transition border ${
+          active === null
+            ? "bg-amber-400 text-zinc-950 border-amber-400"
+            : "bg-zinc-900/60 text-zinc-300 border-zinc-800 hover:border-zinc-700"
+        }`}
+      >
+        All
+      </button>
+      {tags.map((t) => {
+        const c = tagColor(t);
+        const isActive = active === t;
+        return (
+          <button
+            key={t}
+            onClick={() => onChange(isActive ? null : t)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition border ring-1 ${
+              isActive
+                ? `${c.bg} ${c.text} ${c.ring} border-transparent`
+                : `bg-zinc-900/40 text-zinc-400 border-zinc-800 hover:border-zinc-700 ${c.ring}`
+            }`}
+          >
+            #{t}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function NoteCard({ note, onDelete }) {
   const preview = (note.content || "").trim();
   const isEmpty = preview.length === 0;
@@ -177,7 +363,7 @@ function NoteCard({ note, onDelete }) {
     : preview;
 
   return (
-    <div className="group relative bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 hover:border-emerald-500/40 hover:bg-zinc-900 transition">
+    <div className="group relative bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/40 hover:bg-zinc-900 transition">
       <Link to={`/notes/${note._id}`} className="block">
         <h3 className="font-semibold text-lg leading-snug pr-9 mb-2 line-clamp-2 text-zinc-100 font-serif">
           {note.title}
@@ -204,6 +390,11 @@ function NoteCard({ note, onDelete }) {
             })}
           </div>
         )}
+        {note.updatedAt && (
+          <p className="text-[11px] text-zinc-600 mt-3 uppercase tracking-wider">
+            {formatRelative(note.updatedAt)}
+          </p>
+        )}
       </Link>
       <button
         onClick={(e) => {
@@ -224,7 +415,7 @@ function NoteCard({ note, onDelete }) {
 function EmptyState({ onCreate }) {
   return (
     <div className="border border-dashed border-zinc-800 rounded-2xl p-16 text-center bg-zinc-900/30">
-      <div className="inline-flex bg-emerald-500/10 text-emerald-400 p-4 rounded-2xl border border-emerald-500/20 mb-5">
+      <div className="inline-flex bg-amber-500/10 text-amber-400 p-4 rounded-2xl border border-amber-500/20 mb-5">
         <Sparkles size={28} />
       </div>
       <h3 className="text-xl font-semibold font-serif">
@@ -236,7 +427,7 @@ function EmptyState({ onCreate }) {
       </p>
       <button
         onClick={onCreate}
-        className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 px-4 py-2 rounded-lg font-semibold transition"
+        className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 px-4 py-2 rounded-lg font-semibold transition shadow-lg shadow-amber-500/20"
       >
         <Plus size={18} /> Create note
       </button>
@@ -271,11 +462,11 @@ function CreateNoteModal({ onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md p-6"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -298,7 +489,7 @@ function CreateNoteModal({ onClose, onCreated }) {
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 outline-none transition"
+              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 outline-none transition"
               placeholder="A short, descriptive title"
             />
           </label>
@@ -309,7 +500,7 @@ function CreateNoteModal({ onClose, onCreated }) {
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 outline-none transition"
+              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 outline-none transition"
               placeholder="work, ideas, personal"
             />
             <span className="text-xs text-zinc-600 mt-1.5 block">
@@ -318,7 +509,7 @@ function CreateNoteModal({ onClose, onCreated }) {
           </label>
 
           {error && (
-            <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+            <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2.5">
               {error}
             </p>
           )}
@@ -334,7 +525,7 @@ function CreateNoteModal({ onClose, onCreated }) {
             <button
               type="submit"
               disabled={busy || !title.trim()}
-              className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 font-semibold transition disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-zinc-950 font-semibold transition disabled:opacity-50 disabled:hover:bg-amber-400 shadow-lg shadow-amber-500/20"
             >
               {busy ? "Creating..." : "Create"}
             </button>
