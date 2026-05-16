@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node -r dotenv/config src/index.js",
+    "start": "node -r dotenv/config src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -20,9 +20,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
-    "install": "^0.13.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.2",
-    "npm": "^11.14.1"
+    "mongoose": "^9.6.2"
   }
 }
