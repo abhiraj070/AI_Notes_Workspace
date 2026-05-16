@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Check, Loader2, NotebookPen } from "lucide-react";
+import { ArrowLeft, Check, Loader2, NotebookPen, Pencil, X } from "lucide-react";
 import api from "../api";
 
 const TAG_PALETTE = [
@@ -29,6 +29,12 @@ export default function NoteEditor() {
   const [status, setStatus] = useState("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const initialLoad = useRef(true);
   const debounceRef = useRef(null);
@@ -90,6 +96,41 @@ export default function NoteEditor() {
     el.style.height = Math.max(el.scrollHeight, window.innerHeight - 280) + "px";
   }, [content, note]);
 
+  const openEdit = () => {
+    setEditTitle(note.title);
+    setEditTags((note.tags || []).join(", "));
+    setEditError("");
+    setShowEdit(true);
+  };
+
+  const closeEdit = () => setShowEdit(false);
+
+  const handleSaveMeta = async (e) => {
+    e.preventDefault();
+    if (!editTitle.trim()) {
+      setEditError("Title cannot be empty");
+      return;
+    }
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const tags = editTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const { data } = await api.patch(`/notes/${id}`, {
+        title: editTitle.trim(),
+        tags,
+      });
+      setNote(data.data.note);
+      setShowEdit(false);
+    } catch (err) {
+      setEditError(err?.response?.data?.message || "Could not save changes");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-zinc-500">
@@ -137,9 +178,24 @@ export default function NoteEditor() {
       </header>
 
       <article className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight font-serif text-zinc-100 leading-tight">
-          {note.title}
-        </h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1
+            className={`text-3xl sm:text-4xl font-semibold tracking-tight font-serif leading-tight flex-1 ${
+              note.title === "Untitled" ? "text-zinc-500 italic" : "text-zinc-100"
+            }`}
+          >
+            {note.title}
+          </h1>
+          <button
+            onClick={openEdit}
+            className="shrink-0 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-amber-400 border border-zinc-800 hover:border-amber-500/30 px-2.5 py-1.5 rounded-lg transition mt-1"
+            title="Edit title and tags"
+          >
+            <Pencil size={14} />
+            <span className="hidden sm:inline">Edit</span>
+          </button>
+        </div>
+
         {note.tags?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-5">
             {note.tags.map((t, i) => {
@@ -167,6 +223,83 @@ export default function NoteEditor() {
           />
         </div>
       </article>
+
+      {showEdit && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30 p-4"
+          onClick={closeEdit}
+        >
+          <div
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold">Edit title & tags</h3>
+              <button
+                onClick={closeEdit}
+                className="text-zinc-500 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMeta} className="space-y-4">
+              <label className="block">
+                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  Title
+                </span>
+                <input
+                  autoFocus
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 outline-none transition"
+                  placeholder="Note title"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  Tags
+                </span>
+                <input
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 outline-none transition"
+                  placeholder="work, ideas, personal"
+                />
+                <span className="text-xs text-zinc-600 mt-1.5 block">
+                  Separate multiple tags with commas. Leave empty to remove all tags.
+                </span>
+              </label>
+
+              {editError && (
+                <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2.5">
+                  {editError}
+                </p>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeEdit}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/40 text-zinc-200 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving || !editTitle.trim()}
+                  className="flex-1 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 active:bg-amber-500 disabled:opacity-50 text-zinc-950 font-semibold transition shadow-lg shadow-amber-500/20"
+                >
+                  {editSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

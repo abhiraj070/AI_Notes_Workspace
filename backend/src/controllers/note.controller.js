@@ -6,13 +6,10 @@ import { Note } from "../models/note.model.js";
 import { User } from "../models/user.model.js";
 
 const createNote = asyncHandler(async (req, res) => {
-    const { title, tags } = req.body
-    if(!title){
-        throw new ApiError(400, "Title is required")
-    }
+    const { tags } = req.body
 
     const note = await Note.create({
-        title,
+        title: "Untitled",
         tags: tags || [],
         content: "",
     })
@@ -67,7 +64,7 @@ const updateTitleOrTag = asyncHandler(async (req, res) => {
     if(!mongoose.isValidObjectId(noteId)){
         throw new ApiError(400, "Invalid note id")
     }
-    if(!title && !tags){
+    if(title === undefined && tags === undefined){
         throw new ApiError(400, "Provide at least title or tags to update")
     }
 
@@ -77,8 +74,19 @@ const updateTitleOrTag = asyncHandler(async (req, res) => {
     }
 
     const updates = {}
-    if(title) updates.title = title
-    if(tags) updates.tags = tags
+    if(title !== undefined){
+        const trimmed = String(title).trim()
+        if(!trimmed){
+            throw new ApiError(400, "Title cannot be empty")
+        }
+        updates.title = trimmed
+    }
+    if(tags !== undefined){
+        if(!Array.isArray(tags)){
+            throw new ApiError(400, "Tags must be an array")
+        }
+        updates.tags = tags.map((t) => String(t).trim()).filter(Boolean)
+    }
 
     const updatedNote = await Note.findByIdAndUpdate(
         noteId,

@@ -5,6 +5,7 @@ const noteSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
+      default: "Untitled",
       trim: true,
     },
     tags: [
@@ -14,6 +15,10 @@ const noteSchema = new mongoose.Schema(
       },
     ],
     content: {
+      type: String,
+      default: "",
+    },
+    summary: {
       type: String,
       default: "",
     },
