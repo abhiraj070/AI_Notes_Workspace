@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { NotebookPen } from "lucide-react";
+import { NotebookPen, Sparkles, Tags, Feather, ArrowRight } from "lucide-react";
 import { useAuth } from "../AuthContext.jsx";
 
 export default function Auth() {
@@ -39,21 +39,66 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="bg-emerald-50 text-emerald-700 p-3 rounded-2xl border border-emerald-100">
-            <NotebookPen size={22} />
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight">AI Notes</h1>
-          <p className="text-sm text-stone-500">
-            {mode === "login"
-              ? "Welcome back. Sign in to continue."
-              : "Create your account to get started."}
-          </p>
+    <div className="min-h-screen lg:grid lg:grid-cols-[1.1fr_1fr]">
+      <aside className="hidden lg:flex flex-col justify-between p-12 xl:p-16 border-r border-zinc-800/80 relative overflow-hidden">
+        <div className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[380px] h-[380px] rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
+
+        <div className="relative">
+          <Brand />
         </div>
 
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-7">
+        <div className="relative max-w-lg">
+          <h2 className="text-4xl xl:text-5xl font-semibold tracking-tight leading-[1.1] font-serif">
+            Notes that quietly{" "}
+            <span className="text-emerald-400">organize themselves</span>.
+          </h2>
+          <p className="text-zinc-400 mt-6 text-base xl:text-lg leading-relaxed">
+            noteAi is a calm, focused space to capture ideas, draft thoughts,
+            and let AI help you make sense of what you&apos;ve written.
+          </p>
+
+          <div className="mt-10 space-y-5">
+            <Feature
+              icon={<Feather size={16} />}
+              title="Distraction-free writing"
+              desc="An infinite canvas designed to disappear behind your words."
+            />
+            <Feature
+              icon={<Tags size={16} />}
+              title="Effortless organization"
+              desc="Tag once, find everything. Color-coded, automatically."
+            />
+            <Feature
+              icon={<Sparkles size={16} />}
+              title="Intelligent assistance"
+              desc="Summarize, expand, and refine your notes — when you need it."
+            />
+          </div>
+        </div>
+
+        <div className="relative text-xs text-zinc-600">
+          © {new Date().getFullYear()} noteAi
+        </div>
+      </aside>
+
+      <main className="flex items-center justify-center p-6 lg:p-12 min-h-screen">
+        <div className="w-full max-w-sm">
+          <div className="lg:hidden mb-10 flex justify-center">
+            <Brand />
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {mode === "login" ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="text-zinc-400 mt-2 text-sm">
+              {mode === "login"
+                ? "Sign in to continue to your notes."
+                : "Start writing in seconds. No credit card required."}
+            </p>
+          </div>
+
           <form onSubmit={submit} className="space-y-4">
             {mode === "register" && (
               <Field label="Name">
@@ -62,7 +107,7 @@ export default function Auth() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none transition"
+                  className={inputCls}
                   placeholder="Jane Doe"
                 />
               </Field>
@@ -73,7 +118,7 @@ export default function Auth() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none transition"
+                className={inputCls}
                 placeholder="you@example.com"
               />
             </Field>
@@ -84,18 +129,18 @@ export default function Auth() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none transition"
+                className={inputCls}
                 placeholder="At least 6 characters"
               />
             </Field>
 
             {info && (
-              <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+              <p className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
                 {info}
               </p>
             )}
             {error && (
-              <p className="text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+              <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
                 {error}
               </p>
             )}
@@ -103,42 +148,81 @@ export default function Auth() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white py-2.5 rounded-lg font-medium transition disabled:opacity-50"
+              className="group w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 py-2.5 rounded-lg font-semibold transition disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {busy
                 ? "Please wait..."
                 : mode === "login"
                 ? "Sign in"
                 : "Create account"}
+              {!busy && (
+                <ArrowRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
+              )}
             </button>
           </form>
-        </div>
 
-        <p className="text-sm text-center text-stone-500 mt-6">
-          {mode === "login" ? "New here?" : "Already have an account?"}{" "}
-          <button
-            onClick={() => {
-              setError("");
-              setInfo("");
-              setMode(mode === "login" ? "register" : "login");
-            }}
-            className="text-emerald-700 font-medium hover:underline"
-          >
-            {mode === "login" ? "Create an account" : "Sign in"}
-          </button>
-        </p>
+          <p className="text-sm text-center text-zinc-500 mt-8">
+            {mode === "login" ? "New to noteAi?" : "Already have an account?"}{" "}
+            <button
+              onClick={() => {
+                setError("");
+                setInfo("");
+                setMode(mode === "login" ? "register" : "login");
+              }}
+              className="text-emerald-400 font-medium hover:text-emerald-300"
+            >
+              {mode === "login" ? "Create an account" : "Sign in"}
+            </button>
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const inputCls =
+  "w-full px-3.5 py-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 outline-none transition";
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        {label}
+      </span>
+      <div className="mt-1.5">{children}</div>
+    </label>
+  );
+}
+
+function Brand() {
+  return (
+    <div className="inline-flex items-center gap-2.5">
+      <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg border border-emerald-500/20">
+        <NotebookPen size={18} />
+      </div>
+      <div className="text-xl font-semibold tracking-tight">
+        <span>note</span>
+        <span className="text-emerald-400">Ai</span>
       </div>
     </div>
   );
 }
 
-function Field({ label, children }) {
+function Feature({ icon, title, desc }) {
   return (
-    <label className="block">
-      <span className="text-xs font-medium text-stone-600 uppercase tracking-wider">
-        {label}
-      </span>
-      <div className="mt-1.5">{children}</div>
-    </label>
+    <div className="flex gap-3.5">
+      <div className="bg-zinc-900 text-emerald-400 p-2 rounded-lg h-fit border border-zinc-800">
+        {icon}
+      </div>
+      <div>
+        <div className="font-medium text-sm text-zinc-100">{title}</div>
+        <div className="text-zinc-400 text-sm mt-0.5 leading-relaxed">
+          {desc}
+        </div>
+      </div>
+    </div>
   );
 }

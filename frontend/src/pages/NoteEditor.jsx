@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, NotebookPen } from "lucide-react";
 import api from "../api";
 
 const TAG_PALETTE = [
-  { bg: "bg-emerald-100", text: "text-emerald-800" },
-  { bg: "bg-amber-100", text: "text-amber-800" },
-  { bg: "bg-sky-100", text: "text-sky-800" },
-  { bg: "bg-rose-100", text: "text-rose-800" },
-  { bg: "bg-teal-100", text: "text-teal-800" },
-  { bg: "bg-orange-100", text: "text-orange-800" },
-  { bg: "bg-lime-100", text: "text-lime-800" },
-  { bg: "bg-fuchsia-100", text: "text-fuchsia-800" },
+  { bg: "bg-emerald-500/15", text: "text-emerald-300", ring: "ring-emerald-500/20" },
+  { bg: "bg-amber-500/15", text: "text-amber-300", ring: "ring-amber-500/20" },
+  { bg: "bg-sky-500/15", text: "text-sky-300", ring: "ring-sky-500/20" },
+  { bg: "bg-rose-500/15", text: "text-rose-300", ring: "ring-rose-500/20" },
+  { bg: "bg-teal-500/15", text: "text-teal-300", ring: "ring-teal-500/20" },
+  { bg: "bg-orange-500/15", text: "text-orange-300", ring: "ring-orange-500/20" },
+  { bg: "bg-lime-500/15", text: "text-lime-300", ring: "ring-lime-500/20" },
+  { bg: "bg-fuchsia-500/15", text: "text-fuchsia-300", ring: "ring-fuchsia-500/20" },
 ];
 
 function tagColor(tag) {
@@ -26,7 +26,7 @@ export default function NoteEditor() {
 
   const [note, setNote] = useState(null);
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | saving | saved
+  const [status, setStatus] = useState("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -83,17 +83,16 @@ export default function NoteEditor() {
     };
   }, [content]);
 
-  // Autosize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.max(el.scrollHeight, window.innerHeight - 200) + "px";
+    el.style.height = Math.max(el.scrollHeight, window.innerHeight - 280) + "px";
   }, [content, note]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-stone-400">
+      <div className="min-h-screen flex items-center justify-center text-zinc-500">
         <Loader2 size={20} className="animate-spin" />
       </div>
     );
@@ -102,10 +101,10 @@ export default function NoteEditor() {
   if (error || !note) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-3">
-        <p className="text-stone-600">{error || "Note not found"}</p>
+        <p className="text-zinc-300">{error || "Note not found"}</p>
         <Link
           to="/"
-          className="text-emerald-700 font-medium hover:underline text-sm"
+          className="text-emerald-400 font-medium hover:text-emerald-300 text-sm"
         >
           Back to notes
         </Link>
@@ -115,31 +114,44 @@ export default function NoteEditor() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-stone-200/70 bg-white/80 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 text-stone-600 hover:text-stone-900 transition px-2 py-1 rounded-lg hover:bg-stone-100"
+            className="flex items-center gap-2 text-zinc-400 hover:text-zinc-100 transition px-2 py-1 rounded-lg hover:bg-zinc-900"
           >
             <ArrowLeft size={18} />
             <span className="text-sm font-medium">Notes</span>
           </button>
+          <Link
+            to="/"
+            className="flex items-center gap-2 group"
+            title="Home"
+          >
+            <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-md border border-emerald-500/20">
+              <NotebookPen size={14} />
+            </div>
+            <div className="text-sm font-semibold tracking-tight">
+              <span>note</span>
+              <span className="text-emerald-400">Ai</span>
+            </div>
+          </Link>
           <SaveIndicator status={status} />
         </div>
       </header>
 
-      <article className="max-w-3xl mx-auto px-6 py-10">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight font-serif">
+      <article className="max-w-3xl mx-auto px-6 py-12">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight font-serif text-zinc-100 leading-tight">
           {note.title}
         </h1>
         {note.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4">
+          <div className="flex flex-wrap gap-1.5 mt-5">
             {note.tags.map((t, i) => {
               const c = tagColor(t);
               return (
                 <span
                   key={i}
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${c.bg} ${c.text}`}
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${c.bg} ${c.text} ring-1 ${c.ring}`}
                 >
                   {t}
                 </span>
@@ -148,14 +160,14 @@ export default function NoteEditor() {
           </div>
         )}
 
-        <div className="mt-8 border-t border-stone-200 pt-8">
+        <div className="mt-10 border-t border-zinc-800 pt-10">
           <textarea
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing..."
-            className="w-full bg-transparent resize-none outline-none text-lg leading-relaxed font-serif placeholder:text-stone-300 placeholder:italic"
-            style={{ minHeight: "calc(100vh - 200px)" }}
+            className="w-full bg-transparent resize-none outline-none text-lg leading-relaxed font-serif text-zinc-200 placeholder:text-zinc-700 placeholder:italic"
+            style={{ minHeight: "calc(100vh - 280px)" }}
           />
         </div>
       </article>
@@ -166,17 +178,17 @@ export default function NoteEditor() {
 function SaveIndicator({ status }) {
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-stone-500">
+      <span className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Loader2 size={14} className="animate-spin" /> Saving
       </span>
     );
   }
   if (status === "saved") {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-emerald-700">
+      <span className="flex items-center gap-1.5 text-xs text-emerald-400">
         <Check size={14} /> Saved
       </span>
     );
   }
-  return <span className="text-xs text-stone-400">Draft</span>;
+  return <span className="text-xs text-zinc-600">Draft</span>;
 }

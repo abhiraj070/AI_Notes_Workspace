@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Trash2, NotebookPen, LogOut, X } from "lucide-react";
+import { Plus, Trash2, NotebookPen, LogOut, X, Sparkles } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
 const TAG_PALETTE = [
-  { bg: "bg-emerald-100", text: "text-emerald-800" },
-  { bg: "bg-amber-100", text: "text-amber-800" },
-  { bg: "bg-sky-100", text: "text-sky-800" },
-  { bg: "bg-rose-100", text: "text-rose-800" },
-  { bg: "bg-teal-100", text: "text-teal-800" },
-  { bg: "bg-orange-100", text: "text-orange-800" },
-  { bg: "bg-lime-100", text: "text-lime-800" },
-  { bg: "bg-fuchsia-100", text: "text-fuchsia-800" },
+  { bg: "bg-emerald-500/15", text: "text-emerald-300", ring: "ring-emerald-500/20" },
+  { bg: "bg-amber-500/15", text: "text-amber-300", ring: "ring-amber-500/20" },
+  { bg: "bg-sky-500/15", text: "text-sky-300", ring: "ring-sky-500/20" },
+  { bg: "bg-rose-500/15", text: "text-rose-300", ring: "ring-rose-500/20" },
+  { bg: "bg-teal-500/15", text: "text-teal-300", ring: "ring-teal-500/20" },
+  { bg: "bg-orange-500/15", text: "text-orange-300", ring: "ring-orange-500/20" },
+  { bg: "bg-lime-500/15", text: "text-lime-300", ring: "ring-lime-500/20" },
+  { bg: "bg-fuchsia-500/15", text: "text-fuchsia-300", ring: "ring-fuchsia-500/20" },
 ];
 
 function tagColor(tag) {
@@ -69,46 +69,71 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-stone-200/70 bg-white/70 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-zinc-800/80 bg-zinc-950/70 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-emerald-50 text-emerald-700 p-2 rounded-xl border border-emerald-100">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg border border-emerald-500/20">
               <NotebookPen size={18} />
             </div>
-            <div>
-              <h1 className="text-lg font-semibold leading-tight">AI Notes</h1>
-              <p className="text-xs text-stone-500">
-                Hi, {user?.name || "there"}
-              </p>
+            <div className="text-lg font-semibold tracking-tight">
+              <span>note</span>
+              <span className="text-emerald-400">Ai</span>
             </div>
           </div>
-          <button
-            onClick={() => {
-              logout();
-              navigate("/auth", { replace: true });
-            }}
-            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 transition px-3 py-1.5 rounded-lg hover:bg-stone-100"
-            title="Sign out"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:block text-sm text-zinc-400">
+              Hi, <span className="text-zinc-200">{user?.name || "there"}</span>
+            </span>
+            <button
+              onClick={() => {
+                logout();
+                navigate("/auth", { replace: true });
+              }}
+              className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100 transition px-3 py-1.5 rounded-lg hover:bg-zinc-900"
+              title="Sign out"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold tracking-tight">Your notes</h2>
-          <p className="text-stone-500 text-sm mt-1">
-            {loading
-              ? "Loading..."
-              : notes.length === 0
-              ? "Nothing here yet — tap the + button to start."
-              : `${notes.length} note${notes.length === 1 ? "" : "s"}`}
-          </p>
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        <div className="mb-10 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight font-serif">
+              Your notes
+            </h2>
+            <p className="text-zinc-500 text-sm mt-2">
+              {loading
+                ? "Loading..."
+                : notes.length === 0
+                ? "Nothing here yet — tap the + button to start."
+                : `${notes.length} note${notes.length === 1 ? "" : "s"}`}
+            </p>
+          </div>
+          {!loading && notes.length > 0 && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="hidden sm:inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 px-4 py-2 rounded-lg font-semibold transition"
+            >
+              <Plus size={18} /> New note
+            </button>
+          )}
         </div>
 
-        {!loading && notes.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-40 rounded-2xl bg-zinc-900/60 border border-zinc-800 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : notes.length === 0 ? (
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -125,7 +150,7 @@ export default function Home() {
 
       <button
         onClick={() => setShowCreate(true)}
-        className="fixed bottom-8 right-8 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white rounded-full w-14 h-14 shadow-lg shadow-emerald-700/30 flex items-center justify-center transition hover:scale-105"
+        className="sm:hidden fixed bottom-6 right-6 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 rounded-full w-14 h-14 shadow-xl shadow-emerald-500/25 flex items-center justify-center transition hover:scale-105"
         title="New note"
         aria-label="Create new note"
       >
@@ -144,22 +169,22 @@ export default function Home() {
 
 function NoteCard({ note, onDelete }) {
   const preview = (note.content || "").trim();
-  const previewText =
-    preview.length === 0
-      ? "Empty note — click to start writing"
-      : preview.length > 180
-      ? preview.slice(0, 180) + "…"
-      : preview;
+  const isEmpty = preview.length === 0;
+  const previewText = isEmpty
+    ? "Empty note — click to start writing"
+    : preview.length > 180
+    ? preview.slice(0, 180) + "…"
+    : preview;
 
   return (
-    <div className="group relative bg-white border border-stone-200 rounded-2xl p-5 hover:border-emerald-300 hover:shadow-md transition">
+    <div className="group relative bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 hover:border-emerald-500/40 hover:bg-zinc-900 transition">
       <Link to={`/notes/${note._id}`} className="block">
-        <h3 className="font-semibold text-lg leading-snug pr-8 mb-2 line-clamp-2">
+        <h3 className="font-semibold text-lg leading-snug pr-9 mb-2 line-clamp-2 text-zinc-100 font-serif">
           {note.title}
         </h3>
         <p
           className={`text-sm leading-relaxed mb-4 line-clamp-4 ${
-            preview.length === 0 ? "text-stone-400 italic" : "text-stone-600"
+            isEmpty ? "text-zinc-600 italic" : "text-zinc-400"
           }`}
         >
           {previewText}
@@ -171,7 +196,7 @@ function NoteCard({ note, onDelete }) {
               return (
                 <span
                   key={i}
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text} ring-1 ${c.ring}`}
                 >
                   {t}
                 </span>
@@ -186,7 +211,7 @@ function NoteCard({ note, onDelete }) {
           e.stopPropagation();
           onDelete();
         }}
-        className="absolute top-3 right-3 p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition"
+        className="absolute top-3 right-3 p-2 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
         title="Delete note"
         aria-label="Delete note"
       >
@@ -198,17 +223,20 @@ function NoteCard({ note, onDelete }) {
 
 function EmptyState({ onCreate }) {
   return (
-    <div className="border border-dashed border-stone-300 rounded-2xl p-16 text-center">
-      <div className="inline-flex bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 mb-4">
-        <NotebookPen size={28} />
+    <div className="border border-dashed border-zinc-800 rounded-2xl p-16 text-center bg-zinc-900/30">
+      <div className="inline-flex bg-emerald-500/10 text-emerald-400 p-4 rounded-2xl border border-emerald-500/20 mb-5">
+        <Sparkles size={28} />
       </div>
-      <h3 className="text-xl font-semibold">Start your first note</h3>
-      <p className="text-stone-500 text-sm mt-1 mb-5">
-        Capture an idea, draft a thought, or jot something down.
+      <h3 className="text-xl font-semibold font-serif">
+        Start your first note
+      </h3>
+      <p className="text-zinc-500 text-sm mt-1.5 mb-6 max-w-sm mx-auto">
+        Capture an idea, draft a thought, or jot something down. Your notes live
+        here, organized by tags.
       </p>
       <button
         onClick={onCreate}
-        className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg font-medium transition"
+        className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 px-4 py-2 rounded-lg font-semibold transition"
       >
         <Plus size={18} /> Create note
       </button>
@@ -243,18 +271,18 @@ function CreateNoteModal({ onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center z-20 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-semibold">New note</h3>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100"
+            className="text-zinc-500 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800"
             aria-label="Close"
           >
             <X size={18} />
@@ -262,7 +290,7 @@ function CreateNoteModal({ onClose, onCreated }) {
         </div>
         <form onSubmit={submit} className="space-y-4">
           <label className="block">
-            <span className="text-xs font-medium text-stone-600 uppercase tracking-wider">
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
               Title
             </span>
             <input
@@ -270,27 +298,27 @@ function CreateNoteModal({ onClose, onCreated }) {
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none"
-              placeholder="A short title"
+              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 outline-none transition"
+              placeholder="A short, descriptive title"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-stone-600 uppercase tracking-wider">
+            <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
               Tags
             </span>
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full mt-1.5 px-3 py-2.5 rounded-lg border border-stone-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none"
-              placeholder="Comma separated (e.g. work, ideas)"
+              className="w-full mt-1.5 px-3.5 py-2.5 rounded-lg bg-zinc-950/60 border border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 outline-none transition"
+              placeholder="work, ideas, personal"
             />
-            <span className="text-xs text-stone-400 mt-1 block">
+            <span className="text-xs text-zinc-600 mt-1.5 block">
               Optional. Separate multiple tags with commas.
             </span>
           </label>
 
           {error && (
-            <p className="text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
+            <p className="text-sm text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
@@ -299,14 +327,14 @@ function CreateNoteModal({ onClose, onCreated }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg border border-stone-200 hover:bg-stone-50 transition font-medium"
+              className="flex-1 py-2.5 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/40 text-zinc-200 transition font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy || !title.trim()}
-              className="flex-1 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-medium transition disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-zinc-950 font-semibold transition disabled:opacity-50"
             >
               {busy ? "Creating..." : "Create"}
             </button>
